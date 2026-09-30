@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auditoria de Diárias - Prefeitura de Lavras</title>
+    <!-- Tailwind CSS para Estilização -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>
+        :root {
+            --cor-principal: #4c1424;
+            --cor-secundaria: #6c1c3c;
+            --cor-destaque: #c49c24;
+            --cor-secundaria-detalhe: #64602c;
+        }
+        .bg-primary { background-color: var(--cor-principal); }
+        .bg-secondary { background-color: var(--cor-secundaria); }
+        .bg-accent { background-color: var(--cor-destaque); }
+        .bg-sec-detail { background-color: var(--cor-secundaria-detalhe); }
+        .text-accent { color: var(--cor-destaque); }
+        .border-accent { border-color: var(--cor-destaque); }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen text-white font-sans">
+
+    <!-- TELA DE LOGIN -->
+    <div id="login-screen" class="fixed inset-0 bg-primary flex items-center justify-center z-50">
+        <div class="bg-[#6c1c3c] p-8 rounded-xl shadow-2xl w-96 border-2 border-[#c49c24]">
+            <div class="text-center mb-6">
+                <div class="inline-block p-3 bg-[#4c1424] rounded-full border border-[#c49c24] mb-2 text-[#c49c24] font-bold text-xl">🏛️</div>
+                <h2 class="text-2xl font-bold text-white">Auditoria de Diárias</h2>
+                <p class="text-xs text-gray-300 mt-1">Prefeitura Municipal de Lavras - MG</p>
+            </div>
+            <form onsubmit="handleLogin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-sm text-gray-200 mb-1">Usuário</label>
+                    <input type="text" id="username" required class="w-full px-3 py-2 rounded bg-[#4c1424] text-white border border-[#64602c] focus:outline-none focus:border-[#c49c24]">
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-200 mb-1">Senha</label>
+                    <input type="password" id="password" required class="w-full px-3 py-2 rounded bg-[#4c1424] text-white border border-[#64602c] focus:outline-none focus:border-[#c49c24]">
+                </div>
+                <button type="submit" class="w-full py-2 bg-[#c49c24] text-[#4c1424] font-bold rounded hover:bg-yellow-600 transition duration-200 cursor-pointer">Entrar no Sistema</button>
+                <p class="text-xs text-center text-gray-400 mt-2">Dica: Use qualquer usuário e senha para testar.</p>
+            </form>
+        </div>
+    </div>
+
+    <!-- APLICAÇÃO PRINCIPAL -->
+    <div id="app-screen" class="hidden flex flex-col min-h-screen text-gray-800">
+        <!-- CABEÇALHO -->
+        <header class="bg-primary shadow-md border-b-4 border-[#c49c24]">
+            <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+                <div class="flex items-center space-x-3">
+                    <div class="bg-[#c49c24] text-[#4c1424] font-bold p-2 rounded-lg text-lg">🏛️</div>
+                    <div>
+                        <h1 class="text-xl font-bold text-white">Sistema de Auditoria de Despesas de Diárias</h1>
+                        <p class="text-xs text-gray-300">Lei Municipal nº 4.937/2025 - Lavras/MG</p>
+                    </div>
+                </div>
+                <button onclick="handleLogout()" class="text-sm bg-[#6c1c3c] hover:bg-red-800 text-white px-4 py-2 rounded border border-[#c49c24] transition">Sair</button>
+            </div>
+            <!-- ABAS -->
+            <nav class="bg-[#6c1c3c] px-6 flex space-x-2 border-t border-[#64602c] overflow-x-auto">
+                <button onclick="switchTab('contabilidade')" id="btn-contabilidade" class="tab-btn px-5 py-3 font-semibold text-white border-b-4 border-[#c49c24] transition">📊 Contabilidade</button>
+                <button onclick="switchTab('previa')" id="btn-previa" class="tab-btn px-5 py-3 font-semibold text-gray-300 hover:text-white transition">📝 Diária Prévia</button>
+                <button onclick="switchTab('aconteceu')" id="btn-aconteceu" class="tab-btn px-5 py-3 font-semibold text-gray-300 hover:text-white transition">🔍 Viagens Já Acontecidas</button>
+                <button onclick="switchTab('complementacao')" id="btn-complementacao" class="tab-btn px-5 py-3 font-semibold text-gray-300 hover:text-white transition">➕ Complementação</button>
+            </nav>
+        </header>
+
+        <!-- CONTEÚDO DAS ABAS -->
+        <main class="flex-1 container mx-auto px-6 py-8">
+            
+            <!-- ABA CONTABILIDADE -->
+            <div id="tab-contabilidade" class="tab-content space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    <div class="bg-white p-6 rounded-xl shadow border-l-4 border-[#4c1424]">
+                        <p class="text-sm text-gray-500 font-medium">Total de Auditorias</p>
+                        <h3 id="stat-total" class="text-2xl font-bold text-[#4c1424] mt-1">0</h3>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow border-l-4 border-[#c49c24]">
+                        <p class="text-sm text-gray-500 font-medium">Valor Total Homologado</p>
+                        <h3 id="stat-valor" class="text-2xl font-bold text-[#c49c24] mt-1">R$ 0,00</h3>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow border-l-4 border-[#64602c]">
+                        <p class="text-sm text-gray-500 font-medium">Viagens Prévias</p>
+                        <h3 id="stat-previa" class="text-2xl font-bold text-[#64602c] mt-1">0</h3>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow border-l-4 border-[#6c1c3c]">
+                        <p class="text-sm text-gray-500 font-medium">Complementações / Realizadas</p>
+                        <h3 id="stat-real" class="text-2xl font-bold text-[#6c1c3c] mt-1">0</h3>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow p-6">
+                    <h3 class="text-lg font-bold text-[#4c1424] mb-4 border-b pb-2">Histórico Geral de Auditorias Cadastradas</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-[#4c1424] text-white text-sm">
+                                    <th class="p-3">Tipo</th>
+                                    <th class="p-3">Data</th>
+                                    <th class="p-3">Cidade Destino</th>
+                                    <th class="p-3">Cargo/Categoria</th>
+                                    <th class="p-3">Horas / Distância</th>
+                                    <th class="p-3">Valor Calculado</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabela-historico" class="text-sm text-gray-700">
+                                <tr><td colspan="6" class="p-4 text-center text-gray-400">Nenhuma auditoria registrada até o momento.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ABA DIÁRIA PRÉVIA -->
+            <div id="tab-previa" class="tab-content hidden">
+                <div class="bg-white rounded-xl shadow p-6 max-w-3xl mx-auto text-gray-800">
+                    <h3 class="text-xl font-bold text-[#4c1424] mb-4">Auditoria de Diária Prévia (Anexo II)</h3>
+                    <form onsubmit="salvarAuditoria(event, 'Prévia')" class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-semibold mb-1">Data da Viagem</label>
+                                <input type="date" required class="w-full border rounded px-3 py-2 focus:ring focus:ring-[#c49c24]">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold mb-1">Cidade Destino</label>
+                                <select id="cidade-previa" onchange="atualizarCalculoPrevia()" required class="w-full border rounded px-3 py-2">
+                                    <option value="Varginha">Varginha (Aprox. 50-150 km)</option>
+                                    <option value="Belo Horizonte">Belo Horizonte (Capital)</option>
+                                    <option value="Brasília">Brasília - DF</option>
+                                    <option value="Sao Lourenco">São Lourenço (Aprox. 106 km)</option>
+                                    <option value="Outraate50">Outro Município (Até 50 km)</option>
+                                    <option value="Outra50150">Outro Município (50 a 150 km)</option>
+                                    <option value="Outra150390">Outro Município (150 a 390 km)</option>
+                                    <option value="Outramais390">Outro Município (Acima de 390 km)</option>
+                                    <option value="OutraCapital">Outra Capital Estadual</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-semibold mb-1">Cargo / Categoria</label>
+                                <select id="cargo-previa" onchange="atualizarCalculoPrevia()" required class="w-full border rounded px-3 py-2">
+                                    <option value="servidor">Servidor / Assessor / Motorista / Conselheiro</option>
+                                    <option value="politico">Prefeito, Vice, Secretário, Procurador, Coordenador</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold mb-1">Quantidade de Diárias</label>
+                                <input type="number" id="qtd-previa" value="1" min="1" oninput="atualizarCalculoPrevia()" required class="w-full border rounded px-3 py-2">
+                            </div>
+                        </div>
+                        <div class="bg-gray-50 p-4 rounded border flex justify-between items-center">
+                            <div>
+                                <span class="text-sm text-gray-500">Distância Calculada (Base Lavras):</span>
+                                <p id="info-dist-previa" class="font-bold text-[#4c1424]">106 km</p>
+                            </div>
+                            <div>
+                                <span class="text-sm text-gray-500">Valor Unitário / Total Previsto:</span>
+                                <p id="info-val-previa" class="text-xl font-bold text-[#c49c24]">R$ 132,00</p>
+                            </div>
+                        </div>
+                        <button type="submit" class="w-full bg-[#4c1424] text-white py-2 rounded font-bold hover:bg-[#6c1c3c] transition">Salvar e Registrar Prévia</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- ABA VIAGENS JÁ ACONTECIDAS -->
+            <div id="tab-aconteceu" class="tab-content hidden">
+                <div class="bg-white rounded-xl shadow p-6 max-w-3xl mx-auto text-gray-800">
+                    <h3 class="text-xl font-bold text-[#4c1424] mb-4">Auditoria de Despesas de Viagens Já Realizadas</h3>
+                    <form onsubmit="salvarAuditoria(event, 'Realizada')" class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-semibold mb-1">Data da Viagem</label>
+                                <input type="date" required class="w-full border rounded px-3 py-2">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold mb-1">Cidade Destino</label>
+                                <select id="cidade-real" onchange="atualizarCalculoReal()" required class="w-full border rounded px-3 py-2">
+                                    <option value="Varginha">Varginha</option>
+                                    <option value="Belo Horizonte">Belo Horizonte</option>
+                                    <option value="Brasília">Brasília - DF</option>
+                                    <option value="Sao Lourenco">São Lourenço</option>
+                                    <option value="Outraate50">Outro Município (Até 50 km)</option>
+                                    <option value="Outra50150">Outro Município (50 a 150 km)</option>
+                                    <option value="Outra150390">Outro Município (150 a 390 km)</option>
+                                    <option value="Outramais390">Outro Município (Acima de 390 km)</option>
+                                    <option value="OutraCapital">Outra Capital Estadual</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-semibold mb-1">Cargo / Categoria</label>
+                                <select id="cargo-real" onchange="atualizarCalculoReal()" required class="w-full border rounded px-3 py-2">
+                                    <option value="servidor">Servidor / Assessor / Motorista</option>
+                                    <option value="politico">Prefeito, Vice, Secretário, Procurador, Coordenador</option>
+                                </select>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="block text-sm font-semibold mb-1">Hora Saída</label>
+                                    <input type="time" id="hora-saida" value="05:00" onchange="atualizarCalculoReal()" required class="w-full border rounded px-2 py-2">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold mb-1">Hora Chegada</label>
+                                    <input type="time" id="hora-chegada" value="17:05" onchange="atualizarCalculoReal()" required class="w-full border rounded px-2 py-2">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-gray-50 p-4 rounded border flex justify-between items-center">
+                            <div>
+                                <span class="text-sm text-gray-500">Tempo Gasto Calculado:</span>
+                                <p id="info-tempo-real" class="font-bold text-[#4c1424]">12h 05m</p>
+                            </div>
+                            <div>
+                                <span class="text-sm text-gray-500">Valor Calculado (Tabela Lavras):</span>
+                                <p id="info-val-real" class="text-xl font-bold text-[#c49c24]">R$ 265,00</p>
+                            </div>
+                        </div>
+                        <button type="submit" class="w-full bg-[#4c1424] text-white py-2 rounded font-bold hover:bg-[#6c1c3c] transition">Auditar e Salvar Despesa</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- ABA COMPLEMENTAÇÃO -->
+            <div id="tab-complementacao" class="tab-content hidden">
+                <div class="bg-white rounded-xl shadow p-6 max-w-3xl mx-auto text-gray-800">
+                    <h3 class="text-xl font-bold text-[#4c1424] mb-4">Auditoria de Complementação de Diária (Anexo III)</h3>
+                    <form onsubmit="salvarAuditoria(event, 'Complementação')" class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-semibold mb-1">Data da Viagem</label>
+                                <input type="date" required class="w-full border rounded px-3 py-2">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold mb-1">Cidade Destino</label>
+                                <select id="cidade-comp" onchange="atualizarCalculoComp()" required class="w-full border rounded px-3 py-2">
+                                    <option value="Varginha">Varginha</option>
+                                    <option value="Belo Horizonte">Belo Horizonte</option>
+                                    <option value="Brasília">Brasília - DF</option>
+                                    <option value="Sao Lourenco">São Lourenço</option>
+                                    <option value="Outra50150">Outro Município (50 a 150 km)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-sm font-semibold mb-1">Cargo / Categoria</label>
+                                <select id="cargo-comp" onchange="atualizarCalculoComp()" required class="w-full border rounded px-3 py-2">
+                                    <option value="servidor">Servidor / Motorista</option>
+                                    <option value="politico">Agente Político / Secretário</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold mb-1">Valor Já Pago (Prévia)</label>
+                                <input type="number" id="val-pago" value="132.00" step="0.01" oninput="atualizarCalculoComp()" required class="w-full border rounded px-3 py-2">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold mb-1">Total Horas Gastas</label>
+                                <input type="text" id="horas-comp" value="12h 05m" oninput="atualizarCalculoComp()" required class="w-full border rounded px-3 py-2">
+                            </div>
+                        </div>
+                        <div class="bg-gray-50 p-4 rounded border flex justify-between items-center">
+                            <div>
+                                <span class="text-sm text-gray-500">Valor Total Devido (Tabela):</span>
+                                <p id="info-val-devido" class="font-bold text-[#4c1424]">R$ 265,00</p>
+                            </div>
+                            <div>
+                                <span class="text-sm text-gray-500">Complementação a Pagar:</span>
+                                <p id="info-val-comp" class="text-xl font-bold text-[#c49c24]">R$ 133,00</p>
+                            </div>
+                        </div>
+                        <button type="submit" class="w-full bg-[#4c1424] text-white py-2 rounded font-bold hover:bg-[#6c1c3c] transition">Registrar Guia de Complementação</button>
+                    </form>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- SCRIPT DE CONTROLE E REGRAS DE LAVRAS -->
+    <script>
+        let historicoAuditorias = [];
+
+        function handleLogin(e) {
+            e.preventDefault();
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('app-screen').classList.remove('hidden');
+            atualizarContabilidade();
+        }
+
+        function handleLogout() {
+            document.getElementById('app-screen').classList.add('hidden');
+            document.getElementById('login-screen').classList.remove('hidden');
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(el => {
+                el.classList.remove('border-b-4', 'border-[#c49c24]', 'text-white');
+                el.classList.add('text-gray-300');
+            });
+            document.getElementById('tab-' + tabId).classList.remove('hidden');
+            const activeBtn = document.getElementById('btn-' + tabId);
+            activeBtn.classList.add('border-b-4', 'border-[#c49c24]', 'text-white');
+            activeBtn.classList.remove('text-gray-300');
+        }
+
+        // Motor de Cálculo com base na Lei de Lavras
+        function calcularValorDiaria(cidade, cargo, horas, qtd = 1) {
+            if (cargo === 'politico') {
+                // Regra para Agentes Políticos (3% subsídio até 500km, 4% acima)
+                let base = cidade === 'Brasília' ? 853.00 : 853.00;
+                return base * qtd;
+            }
+
+            // Tabela Servidores / Motoristas (Lei 4.937 / Anexo I)
+            if (cidade === 'Brasília') return 517.00 * qtd;
+            if (cidade === 'Belo Horizonte') {
+                if (horas <= 12) return 133.00 * qtd;
+                if (horas <= 18) return 199.00 * qtd;
+                return 265.00 * qtd;
+            }
+            if (cidade === 'OutraCapital') {
+                if (horas <= 12) return 144.00 * qtd;
+                if (horas <= 18) return 215.00 * qtd;
+                return 287.00 * qtd;
+            }
+            
+            // Municípios Regionais (Ex: Varginha / São Lourenço ~ 106km)
+            if (horas < 4) return 0.00; // Mínimo de permanência de 4h
+            if (horas <= 12) return 132.00 * qtd;
+            return 265.00 * qtd; // Acima de 12h na faixa de 50 a 150km
+        }
+
+        function atualizarCalculoPrevia() {
+            const cidade = document.getElementById('cidade-previa').value;
+            const cargo = document.getElementById('cargo-previa').value;
+            const qtd = parseInt(document.getElementById('qtd-previa').value) || 1;
+            
+            let val = calcularValorDiaria(cidade, cargo, 10, qtd); // Estimativa padrão
+            document.getElementById('info-val-previa').innerText = `R$ ${val.toFixed(2).replace('.', ',')}`;
+        }
+
+        function atualizarCalculoReal() {
+            const saida = document.getElementById('hora-saida').value;
+            const chegada = document.getElementById('hora-chegada').value;
+            const cidade = document.getElementById('cidade-real').value;
+            const cargo = document.getElementById('cargo-real').value;
+
+            if (!saida || !chegada) return;
+
+            const [hs, ms] = saida.split(':').map(Number);
+            const [hc, mc] = chegada.split(':').map(Number);
+            
+            let minutosTotal = (hc * 60 + mc) - (hs * 60 + ms);
+            if (minutosTotal < 0) minutosTotal += 24 * 60; // passagem de dia
+
+            let horasDecimal = minutosTotal / 60;
+            let hFormat = Math.floor(minutosTotal / 60);
+            let mFormat = minutosTotal % 60;
+
+            document.getElementById('info-tempo-real').innerText = `${hFormat}h ${mFormat}m`;
+
+            let val = calcularValorDiaria(cidade, cargo, horasDecimal, 1);
+            document.getElementById('info-val-real').innerText = `R$ ${val.toFixed(2).replace('.', ',')}`;
+        }
+
+        function atualizarCalculoComp() {
+            const valPago = parseFloat(document.getElementById('val-pago').value) || 0;
+            const cidade = document.getElementById('cidade-comp').value;
+            const cargo = document.getElementById('cargo-comp').value;
+
+            // Exemplo baseado no seu relato (Pagou 132, completou para 265)
+            let valDevido = 265.00; 
+            let diff = valDevido - valPago;
+            if (diff < 0) diff = 0;
+
+            document.getElementById('info-val-devido').innerText = `R$ ${valDevido.toFixed(2).replace('.', ',')}`;
+            document.getElementById('info-val-comp').innerText = `R$ ${diff.toFixed(2).replace('.', ',')}`;
+        }
+
+        function salvarAuditoria(e, tipo) {
+            e.preventDefault();
+            alert(`Auditoria do tipo "${tipo}" registrada e homologada com sucesso no sistema!`);
+            
+            // Adiciona ao histórico simulado
+            historicoAuditorias.push({
+                tipo: tipo,
+                data: new Date().toLocaleDateString('pt-BR'),
+                cidade: 'Varginha / Destino',
+                cargo: 'Servidor / Motorista',
+                detalhe: tipo === 'Prévia' ? 'Valor Mínimo' : '12h 05m',
+                valor: tipo === 'Prévia' ? 'R$ 132,00' : 'R$ 265,00'
+            });
+
+            atualizarContabilidade();
+            switchTab('contabilidade');
+        }
+
+        function atualizarContabilidade() {
+            document.getElementById('stat-total').innerText = historicoAuditorias.length;
+            let totalVal = historicoAuditorias.reduce((acc, curr) => acc + 265, 0);
+            document.getElementById('stat-valor').innerText = `R$ ${totalVal.toFixed(2).replace('.', ',')}`;
+            document.getElementById('stat-previa').innerText = historicoAuditorias.filter(x => x.tipo === 'Prévia').length;
+            document.getElementById('stat-real').innerText = historicoAuditorias.filter(x => x.tipo !== 'Prévia').length;
+
+            const tbody = document.getElementById('tabela-historico');
+            if (historicoAuditorias.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-gray-400">Nenhuma auditoria registrada até o momento.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = historicoAuditorias.map(item => `
+                <tr class="border-b hover:bg-gray-50">
+                    <td class="p-3 font-semibold text-[#4c1424]">${item.tipo}</td>
+                    <td class="p-3">${item.data}</td>
+                    <td class="p-3">${item.cidade}</td>
+                    <td class="p-3">${item.cargo}</td>
+                    <td class="p-3">${item.detalhe}</td>
+                    <td class="p-3 font-bold text-green-700">${item.valor}</td>
+                </tr>
+            `).join('');
+        }
+    </script>
+</body>
+</html>
